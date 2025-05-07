@@ -20,85 +20,83 @@ struct TinyCountdownView: View {
     // MARK: - State
     @State private var totalSeconds: Int = 10          // User‑selected duration
     @State private var secondsRemaining: Int = 10      // Live countdown value
-    @State private var isRunning: Bool = false         // Toggle between running & paused
-    @State private var timer: Timer? = nil             // Backing timer
-    
-    // MARK: - Body
+    @State private var isRunning: Bool = false         // Countdown running?
+    @State private var timer: Timer?                   // Backing timer
+
+    // MARK: - UI
     var body: some View {
         VStack(spacing: 32) {
-            // Title
-            Text("Tiny Countdown")
-                .font(.largeTitle)
-                .bold()
+            // Big monospace clock
+            Text(format(seconds: secondsRemaining))
+                .font(.system(size: 64, weight: .bold, design: .monospaced))
+                .padding(.vertical, 16)
 
-            // Countdown label
-            Text(timeString)
-                .font(.system(size: 64, weight: .semibold, design: .monospaced))
-                .accessibilityLabel("\(secondsRemaining) seconds remaining")
-
-            // Duration picker – simple stepper keeps UX minimal
-            Stepper(value: $totalSeconds, in: 1...3600) {
-                Text("Duration: \(totalSeconds) s")
+            // Duration stepper (disabled while running)
+            Stepper(value: $totalSeconds, in: 1...3600, step: 1) {
+                Text("Duration: \(format(seconds: totalSeconds))")
             }
-            .disabled(isRunning)              // Lock the picker while running
-            .onChange(of: totalSeconds) { newValue in
-                secondsRemaining = newValue  // Sync live value when user tweaks duration
-            }
+            .disabled(isRunning)
+            .padding(.horizontal)
 
-            // Control buttons
+            // Controls
             HStack(spacing: 20) {
-                Button(isRunning ? "Pause" : "Start") {
-                    isRunning ? pause() : start()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                Button(isRunning ? "Pause" : "Start") { toggleRunning() }
+                    .buttonStyle(.borderedProminent)
 
-                Button("Reset") {
-                    reset()
-                }
-                .disabled(!isRunning && secondsRemaining == totalSeconds)
+                Button("Reset") { reset() }
+                    .disabled(!isRunning && secondsRemaining == totalSeconds)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
-        .onDisappear { timer?.invalidate() }
+        .onAppear { reset() }
+        .onChange(of: isRunning) { oldValue, newValue in
+            newValue ? start() : pause()
+        }
+        .onChange(of: totalSeconds) { _, newValue in
+            secondsRemaining = newValue
+        }
     }
 
-    // MARK: - Helpers
-    private var timeString: String {
-        let minutes = secondsRemaining / 60
-        let seconds = secondsRemaining % 60
-        return String(format: "%02d:%02d", minutes, seconds)
-    }
-
+    // MARK: - Timer helpers
     private func start() {
-        isRunning = true
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if secondsRemaining > 0 {
                 secondsRemaining -= 1
             } else {
-                timer?.invalidate()
-                isRunning = false
-                // TODO: optional haptic or sound feedback here
+                pause()
+                // TODO: Add haptic / sound if desired
             }
         }
     }
 
     private func pause() {
-        isRunning = false
         timer?.invalidate()
+        timer = nil
     }
 
     private func reset() {
-        timer?.invalidate()
-        isRunning = false
+        pause()
         secondsRemaining = totalSeconds
+        isRunning = false
+    }
+
+    private func toggleRunning() { isRunning.toggle() }
+
+    // MARK: - Utils
+    private func format(seconds: Int) -> String {
+        let h = seconds / 3600
+        let m = (seconds % 3600) / 60
+        let s = seconds % 60
+        return h > 0 ? String(format: "%02d:%02d:%02d", h, m, s)
+                     : String(format: "%02d:%02d", m, s)
     }
 }
 
-// MARK: - Preview
 struct TinyCountdownView_Previews: PreviewProvider {
     static var previews: some View {
         TinyCountdownView()
+            .previewLayout(.sizeThatFits)
     }
 }
