@@ -38,7 +38,7 @@ struct TinyCountdownView: View {
                 }
 
             // Duration stepper (disabled while running)
-            Stepper(value: $totalSeconds, in: 1...3600, step: 1) {
+            Stepper(value: $totalSeconds, in: 1...36000, step: 1) {
                 Text("Duration: \(format(seconds: totalSeconds))")
             }
             .disabled(isRunning)
@@ -65,7 +65,7 @@ struct TinyCountdownView: View {
         .sheet(isPresented: $showDurationPicker) {
             NavigationView {
                 Form {
-                    TextField("Seconds (1–3600)", text: $inputDuration)
+                    TextField("Seconds (1–36000)", text: $inputDuration)
                         .keyboardType(.numberPad)
                 }
                 .navigationBarTitle("Set Duration", displayMode: .inline)
@@ -73,7 +73,7 @@ struct TinyCountdownView: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") {
                             if let value = Int(inputDuration),
-                               (1...3600).contains(value) {
+                               (1...36000).contains(value) {
                                 totalSeconds = value
                                 secondsRemaining = value
                             }
