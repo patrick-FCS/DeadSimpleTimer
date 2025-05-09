@@ -61,12 +61,8 @@ struct TinyCountdownView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
-        .onAppear { reset() }
         .onChange(of: isRunning) { oldValue, newValue in
             newValue ? start() : pause()
-        }
-        .onChange(of: totalSeconds) { _, newValue in
-            secondsRemaining = newValue
         }
         .sheet(isPresented: $showDurationPicker) {
             NavigationView {
@@ -142,7 +138,7 @@ struct TinyCountdownView: View {
     }
 
     private func toggleRunning() { isRunning.toggle() }
-
+    
     // MARK: - Utils
     private func format(seconds: Int) -> String {
         let h = seconds / 36000
