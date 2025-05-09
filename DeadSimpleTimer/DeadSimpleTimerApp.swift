@@ -46,8 +46,14 @@ struct TinyCountdownView: View {
                 Button("Reset") { reset() }
                     .disabled(!isRunning && secondsRemaining == totalSeconds)
 
-                Stepper("", value: $totalSeconds, in: 1...36000, step: 1)
-                    .disabled(isRunning)
+                Stepper("", value: Binding(
+                    get: { secondsRemaining },
+                    set: { newValue in
+                        secondsRemaining = newValue
+                        totalSeconds = newValue
+                    }
+                ), in: 1...36000, step: 1)
+                .disabled(isRunning)
             }
             .padding(.horizontal, 50)
         }
