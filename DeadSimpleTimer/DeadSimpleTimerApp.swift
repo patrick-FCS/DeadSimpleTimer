@@ -18,6 +18,7 @@ struct TinyCountdownApp: App {
 
 struct TinyCountdownView: View {
     // MARK: - State
+    @AppStorage("selectedAppearance") private var selectedAppearance: String = "system"
     @State private var totalSeconds: Int = 10          // User‑selected duration
     @State private var secondsRemaining: Int = 10      // Live countdown value
     @State private var isRunning: Bool = false         // Countdown running?
@@ -26,44 +27,66 @@ struct TinyCountdownView: View {
     @State private var inputDuration: String = ""         // Temp text‑field binding
     @State private var showDurationWarning: Bool = false
 
+    private var resolvedColorScheme: ColorScheme? {
+        switch selectedAppearance {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil
+        }
+    }
+
     // MARK: - UI
     var body: some View {
-        VStack(spacing: 32) {
-            // Big monospace clock
-            Text(format(seconds: secondsRemaining))
-                .font(.system(size: 64, weight: .bold, design: .monospaced))
-                .padding(.vertical, 16)
-                .onTapGesture {
-                    if !isRunning {
-                        inputDuration = String(totalSeconds)
-                        showDurationPicker = true
+        NavigationView {
+            VStack(spacing: 32) {
+                // Big monospace clock
+                Text(format(seconds: secondsRemaining))
+                    .font(.system(size: 64, weight: .bold, design: .monospaced))
+                    .padding(.vertical, 16)
+                    .onTapGesture {
+                        if !isRunning {
+                            inputDuration = String(totalSeconds)
+                            showDurationPicker = true
+                        }
+                    }
+
+                // Controls
+                HStack(spacing: 12) {
+                    Button(isRunning ? "Pause" : "Start") { toggleRunning() }
+                        .buttonStyle(.borderedProminent)
+
+                    Button("Reset") { reset() }
+                        .disabled(!isRunning && secondsRemaining == totalSeconds)
+
+                    Stepper("", value: Binding(
+                        get: { secondsRemaining },
+                        set: { newValue in
+                            secondsRemaining = newValue
+                            totalSeconds = newValue
+                        }
+                    ), in: 1...36000, step: 1)
+                    .disabled(isRunning)
+                }
+                .padding(.horizontal, 50)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding()
+            .onChange(of: isRunning) { oldValue, newValue in
+                newValue ? start() : pause()
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("Light") { selectedAppearance = "light" }
+                        Button("Dark") { selectedAppearance = "dark" }
+                        Button("System") { selectedAppearance = "system" }
+                    } label: {
+                        Image(systemName: "lightbulb")
                     }
                 }
-
-            // Controls
-            HStack(spacing: 12) {
-                Button(isRunning ? "Pause" : "Start") { toggleRunning() }
-                    .buttonStyle(.borderedProminent)
-
-                Button("Reset") { reset() }
-                    .disabled(!isRunning && secondsRemaining == totalSeconds)
-
-                Stepper("", value: Binding(
-                    get: { secondsRemaining },
-                    set: { newValue in
-                        secondsRemaining = newValue
-                        totalSeconds = newValue
-                    }
-                ), in: 1...36000, step: 1)
-                .disabled(isRunning)
             }
-            .padding(.horizontal, 50)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-        .onChange(of: isRunning) { oldValue, newValue in
-            newValue ? start() : pause()
-        }
+      .environment(\.colorScheme, resolvedColorScheme ?? .light)
         .sheet(isPresented: $showDurationPicker) {
             NavigationView {
                 Form {
