@@ -24,6 +24,7 @@ struct TinyCountdownView: View {
     @State private var timer: Timer?                   // Backing timer
     @State private var showDurationPicker: Bool = false   // Controls the sheet
     @State private var inputDuration: String = ""         // Temp text‑field binding
+    @State private var showDurationWarning: Bool = false
 
     // MARK: - UI
     var body: some View {
@@ -67,6 +68,28 @@ struct TinyCountdownView: View {
                 Form {
                     TextField("Seconds (1–36000)", text: $inputDuration)
                         .keyboardType(.numberPad)
+                        .onChange(of: inputDuration) { oldValue, newValue in
+                            let filtered = newValue.filter { "0123456789".contains($0) }
+
+                            if let intVal = Int(filtered), intVal < 1 || intVal > 36000 {
+                                if intVal > 36000 {
+                                    inputDuration = "36000"
+                                } else if intVal < 1 {
+                                    inputDuration = filtered // allow user to fix
+                                }
+                                showDurationWarning = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                    showDurationWarning = false
+                                }
+                            } else {
+                                inputDuration = filtered
+                            }
+                        }
+                    if showDurationWarning {
+                        Text("Duration must be between 1 and 36000 seconds")
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
                 }
                 .navigationBarTitle("Set Duration", displayMode: .inline)
                 .toolbar {
@@ -79,6 +102,7 @@ struct TinyCountdownView: View {
                             }
                             showDurationPicker = false
                         }
+                        .disabled(!(Int(inputDuration).map { (1...36000).contains($0) } ?? false))
                     }
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") { showDurationPicker = false }
