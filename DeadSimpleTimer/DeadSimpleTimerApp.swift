@@ -69,22 +69,15 @@ struct TinyCountdownView: View {
                 Form {
                     TextField("Seconds (1–36000)", text: $inputDuration)
                         .keyboardType(.numberPad)
-                        .onChange(of: inputDuration) { oldValue, newValue in
-                            let filtered = newValue.filter { "0123456789".contains($0) }
-
-                            if let intVal = Int(filtered), intVal < 1 || intVal > 36000 {
-                                if intVal > 36000 {
-                                    inputDuration = "36000"
-                                } else if intVal < 1 {
-                                    inputDuration = filtered // allow user to fix
-                                }
+                        .onChange(of: inputDuration) { _, newValue in
+                            let cleaned = cleanDurationInput(newValue)
+                            if cleaned != newValue {
                                 showDurationWarning = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                                     showDurationWarning = false
                                 }
-                            } else {
-                                inputDuration = filtered
                             }
+                            inputDuration = cleaned
                         }
                     if showDurationWarning {
                         Text("Duration must be between 1 and 36000 seconds")
@@ -121,7 +114,7 @@ struct TinyCountdownView: View {
                 secondsRemaining -= 1
             } else {
                 pause()
-                // TODO: Add haptic / sound if desired
+                notifyCompletion()
             }
         }
     }
@@ -146,6 +139,19 @@ struct TinyCountdownView: View {
         let s = seconds % 60
         return h > 0 ? String(format: "%02d:%02d:%02d", h, m, s)
                      : String(format: "%02d:%02d", m, s)
+    }
+    
+    private func notifyCompletion() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    
+    private func cleanDurationInput(_ raw: String) -> String {
+        let filtered = raw.filter { "0123456789".contains($0) }
+        if let intVal = Int(filtered) {
+            return String(min(max(intVal, 1), 36000))
+        }
+        return "1"
     }
 }
 
