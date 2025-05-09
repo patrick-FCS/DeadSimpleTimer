@@ -34,8 +34,10 @@ struct TinyCountdownView: View {
                 .font(.system(size: 64, weight: .bold, design: .monospaced))
                 .padding(.vertical, 16)
                 .onTapGesture {
-                    inputDuration = String(totalSeconds)
-                    showDurationPicker = true
+                    if !isRunning {
+                        inputDuration = String(totalSeconds)
+                        showDurationPicker = true
+                    }
                 }
 
             // Controls
