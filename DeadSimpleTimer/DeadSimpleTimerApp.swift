@@ -38,21 +38,18 @@ struct TinyCountdownView: View {
                     showDurationPicker = true
                 }
 
-            // Duration stepper (disabled while running)
-            Stepper(value: $totalSeconds, in: 1...36000, step: 1) {
-                Text("Duration: \(format(seconds: totalSeconds))")
-            }
-            .disabled(isRunning)
-            .padding(.horizontal)
-
             // Controls
-            HStack(spacing: 20) {
+            HStack(spacing: 12) {
                 Button(isRunning ? "Pause" : "Start") { toggleRunning() }
                     .buttonStyle(.borderedProminent)
 
                 Button("Reset") { reset() }
                     .disabled(!isRunning && secondsRemaining == totalSeconds)
+
+                Stepper("", value: $totalSeconds, in: 1...36000, step: 1)
+                    .disabled(isRunning)
             }
+            .padding(.horizontal, 50)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
